@@ -150,7 +150,7 @@ var spawner = {
             else {
                 throw new RangeError(
                     `Genome{${require('abathur').genomeToString(genome)}} cost(${total_cost})
-                    exceeds the maximum capacity(${energy_capacity}) of spawner(${spawner_name})`
+                    exceeds the maximum capacity(${energy_capacity}) of spawner(${spawner_inWorld.name})`
                 );
             }
         } catch (error) {
