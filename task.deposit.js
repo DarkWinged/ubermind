@@ -24,15 +24,15 @@ var deposit = {
             let creep;
             if(drone){
                 creep = Game.creeps[drone];
-                if(creep && target_creep)
+                if(creep && target_creep){
+                    console.log(`drone ${creep.name} is working on ${task.task_id}`)
                     this.work(creep, target_creep, task.origin_room);
-                //else
-                   // missing_drones += 1;
+                }
             }
             else
                 missing_drones += 1;
         });
-
+        console.log(`task ${task.task_id} is missing ${missing_drones}`);
         task.queued_drones += this.requestDrones(task.origin_room,task.job_id,task.task_id, task.allowed_parts, missing_drones-task.queued_drones);
     },
 

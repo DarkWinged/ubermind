@@ -25,6 +25,8 @@ let abathur = {
         let scale = optional_scaler || 0;
         let species = Memory.abathur.species[species_name];
 
+        console.log(`Mutating species ${species_name}(${this.genomeToString(species.genome)})`);
+
         switch(scale){
             case -1:
                 species.genome = this.mutate(species.genome, scale);
@@ -68,6 +70,8 @@ let abathur = {
     speciesSpawn: function(path, allowed_parts){
         let usable_species = this.filterSpecies(allowed_parts, path.task);
 
+        console.log(`task ${path.task} is requesing ${usable_species}`);
+
         if(usable_species){
             let spawner_name = Memory.hives[path.hive].Spawners;
             console.log(Memory.hives[path.hive].Spawners);
@@ -88,14 +92,56 @@ let abathur = {
         for(let species in Memory.abathur.species){
             let evaluating = Memory.abathur.species[species];
             if(evaluating.role == type)
-                usable_species.push(eval);
+                usable_species.push(evaluating);
         }
         
         if(usable_species.length == 0) {
             let new_name = `${type}er:${Game.time%1000}`;
             usable_species.push(this.speciesCreate(new_name, type, allowed_parts));
+            Memory.abathur.species[usable_species[0].name] = usable_species[0];
         }
-        return usable_species[0];
+
+        console.log(`species that are usable are: `);
+        usable_species.forEach(species => {
+            console.log(`\t${species.name}`);
+        })
+
+        return this.chooseSpecies(usable_species);
+    },
+
+    chooseSpecies: function(possible_species){
+        let chozen;
+        let pool = [];
+        let choice;
+        
+        possible_species.forEach(species => pool.push(species));
+
+        console.log(`species in the pool are are: `);
+        pool.forEach(species => {
+            console.log(`\t${species.name}`);
+        })
+
+        choice = Game.time%pool.length+2;
+
+        if(choice >= pool.length){
+            choice = Game.time%pool.length-1;
+            if(choice < 0)
+                choice += pool.length;
+
+            console.log(choice,pool.length);
+            chozen = pool[choice];
+            console.log(chozen.name)
+            chozen = this.speciesMutate(chozen.name, 1);
+            Memory.abathur.species[chozen.name] = chozen;
+
+            console.log(`species ${chozen.name} has been mutated ${this.genomeToString(chozen.genome)}`);
+        }
+        else;
+            chozen = pool[choice];
+
+        console.log(`the chozen species is ${chozen.name, this.genomeToString(chozen.genome)}`);
+
+        return chozen;
     },
 
     genomeCost: function(genome){

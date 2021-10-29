@@ -25,11 +25,12 @@ var hive = {
     cleanupDrones: function (room_id) {
         Memory.hives[room_id].Drones.forEach(drone_id => {
             if(!Game.creeps[drone_id]){
+                /*
                 Memory.hives[room_id].Spawners.forEach(spawner_id => {
                     if(Game.spawns[spawner_id].spawning)
                         if(Game.spawns[spawner_id].spawning.name == drone_id)
                             return 0;
-                })
+                })*/
                 console.log(`initating cleanup for ${drone_id}`);
                 let path = Memory.creeps[drone_id].job_path;
                 let index = Memory.tasks[path.task].drones.indexOf(drone_id);
