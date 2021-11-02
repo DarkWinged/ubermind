@@ -17,7 +17,7 @@ var mine = {
     },
 
     preform: function(task){
-        console.log(`task ${task.task_id} is being preformed`);
+        //console.log(`task ${task.task_id} is being preformed`);
         let target = Game.rooms[task.target_pos.roomName].lookForAt(LOOK_SOURCES,task.target_pos.x,task.target_pos.y)[0];
         let missing_drones = 0;
 
@@ -25,13 +25,16 @@ var mine = {
             let creep;
             if(drone){
                 creep = Game.creeps[drone];
-                if(creep)
+                if(creep){
+                    //console.log(`drone ${creep.name} is working on ${task.task_id}`)
                     this.work(creep, target);
+                }
             }
             else
                 missing_drones += 1;
         })
 
+        //console.log(`task ${task.task_id} is missing ${missing_drones}`);
         task.queued_drones += this.requestDrones(task.origin_room,task.job_id,task.task_id, task.allowed_parts, missing_drones-task.queued_drones);
     },
 
@@ -46,50 +49,18 @@ var mine = {
     },
 
     work: function(creep, target){
-        switch(creep.harvest(target)){
-            case ERR_NOT_IN_RANGE:
-                creep.moveTo(target, {visualizePathStyle: {stroke: '#ffff33'}});
-                break;
-            case 0:
-                //parts = creep.getActiveBodyparts(WORK);
-                //Memory.drones[creep.name].Fitness_Score[Job_ID] += parts * 2;
-                break;
+        let parts = creep.getActiveBodyparts(WORK);
+        if(creep.store.getFreeCapacity(RESOURCE_ENERGY) <= parts * 2){
+            switch(creep.harvest(target)){
+                case ERR_NOT_IN_RANGE:
+                    creep.moveTo(target, {visualizePathStyle: {stroke: '#ffff33'}});
+                    break;
+                case 0:
+                    Memory.creeps[creep.name].fitness_score += parts * 2;
+                    break;
             }
+        }
     }
 
 };
-
-/*
-let Job = Memory.jobs[Job_ID];
-        let origin = Game.flags[Job.Source_ID];
-        let creep, source, valid_container, parts;
-        for(let drone in Job.Assigned_ID){
-            creep = Game.creeps[Job.Assigned_ID[drone]];
-
-            if(creep != null){
-                source = Game.getObjectById(Job.Target_ID);
-                if(creep.room != origin.room){
-                    creep.moveTo(origin, {visualizePathStyle: {stroke: '#ffff33'}});
-                } else {
-                    valid_container = creep.pos.findInRange(FIND_STRUCTURES, 0, {
-                        filter: (structure) => {return (structure.structureType == STRUCTURE_CONTAINER);}
-                    });
-                    valid_container = creep.pos.findClosestByRange(valid_container);
-                    if (creep.store.getFreeCapacity() > 0
-                        || (valid_container != null && valid_container.store.getFreeCapacity() > 0))
-                    {
-                        switch(creep.harvest(source)){
-                        case ERR_NOT_IN_RANGE:
-                            creep.moveTo(source, {visualizePathStyle: {stroke: '#ffff33'}});
-                            break;
-                        case 0:
-                            parts = creep.getActiveBodyparts(WORK);
-                            Memory.drones[creep.name].Fitness_Score[Job_ID] += parts * 2;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-*/
 module.exports = mine;
