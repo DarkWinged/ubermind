@@ -8,7 +8,7 @@ var spawner = {
     },
 
     operate: function(spawner_name){
-        console.log(`spawner ${spawner_name} is operating`);
+        //console.log(`spawner ${spawner_name} is operating`);
         let queue = Memory.spawns[spawner_name].queue;
         let spawner_inWorld = Game.spawns[spawner_name];
         let render_position = new RoomPosition(
@@ -74,27 +74,20 @@ var spawner = {
         
         console.log(`Spawning new ${drone_details.species}: ${drone_id},${dna.toString()}`);
         
-        console.log(spawner_inWorld.spawnCreep(dna, drone_id));
+        spawner_inWorld.spawnCreep(dna, drone_id);
         let new_drone = {
             name:drone_id,
             role:drone_details.role,
             species:drone_details.species,
             genome:drone_details.genome,
-            job_path:path
+            job_path:path,
+            fitness_score:0
 
         };
         Memory.hives[spawner_inWorld.room.name].Drones.push(drone_id);
         Memory.creeps[drone_id] = new_drone;
-        let drones = Memory.tasks[path['task']].drones;
-        let skip = false;
-        drones.forEach(drone => {
-            if(!drones[drones.indexOf(drone)] && !skip){
-                skip = true;
-                drones[drones.indexOf(drone)]= drone_id;
-            }
-        });
-        Memory.tasks[path['task']].drones = drones;
-        Memory.tasks[path['task']].queued_drones -=1;
+        Memory.tasks[path['task']].drones.push(drone_id);
+        Memory.tasks[path['task']].drones_queued -=1;
         /*switch(drone_details.role){
         case 'harvest':
             //require('drone_harvester').init(drone_id, Spawn_ID); 

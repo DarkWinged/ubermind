@@ -12,14 +12,14 @@ var harvest = {
             job_type:'harvest',
             job_tasks:[mine_task.task_id, deposit_task.task_id],
         };
-        
+
         Memory.tasks[mine_task.task_id] = mine_task;
         Memory.tasks[deposit_task.task_id] = deposit_task;
         return new_job;
     },
 
     operate: function(job){
-        console.log(`job ${job.job_id} is operational`);
+        //console.log(`job ${job.job_id} is operational`);
         mine.preform(Memory.tasks[job.job_tasks[0]], job.room_id);
         deposit.preform(Memory.tasks[job.job_tasks[1]], Memory.tasks[job.job_tasks[0]].drones[0], job.room_id);
         return job;
