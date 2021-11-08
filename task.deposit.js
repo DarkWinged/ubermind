@@ -1,6 +1,6 @@
 var deposit = {
     init: function(drones_desired, room_id, job_id){
-        let task_id = `deposit:${Game.time%1000}`;
+        let task_id = `deposit:${Game.time%1000}x${Math.round(Math.random()*1000)}`;
         let new_deposit_task = {
             task_id: task_id,
             job_id: job_id,
@@ -23,7 +23,7 @@ var deposit = {
         task.drones.forEach(drone => {
             if(drone){
                 creep = Game.creeps[drone];
-                if(creep && target_creep){
+                if(creep){
                     //console.log(`drone ${creep.name} is working on ${task.task_id}`)
                     this.work(creep, target_creep, task.origin_room);
                 }
@@ -47,8 +47,20 @@ var deposit = {
 
     work: function(drone, target, room_id){
         //console.log(drone.store.getFreeCapacity());
-        if(drone.store.getFreeCapacity() > 0){
+        if(target != null && drone.store.getFreeCapacity() > 0){
             this.pickupResources(drone, target);
+        } else {
+            this.dropoffResources(drone, room_id);
+        }
+    },
+
+    outsourceWork: function(drone_name, target_name, room_id){
+        let drone = Game.creeps[drone_name];
+        let target = Game.creeps[target_name];
+
+        if(target != null && drone.store.getFreeCapacity() > 0){
+            if(target.name != drone.name)
+                this.pickupResources(drone, target);
         } else {
             this.dropoffResources(drone, room_id);
         }
@@ -83,16 +95,10 @@ var deposit = {
     dropoffResources: function(drone, room_id){
         if (drone.pos.roomName != room_id) {
             drone.moveTo({x:20,y:20,roomName:room_id});
-        } else {
-            let valid_structures = [STRUCTURE_STORAGE,STRUCTURE_SPAWN,STRUCTURE_EXTENSION];           
-            let valid_container = drone.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-                filter: function(structure) {
-                    return (valid_structures.includes(structure.structureType) && structure.store.getFreeCapacity(RESOURCE_ENERGY) != 0);
-                }
-            });
+        } else {       
+            let valid_container = this.findStorage(drone.pos);
 
             if(valid_container){
-                //console.log(valid_container.name,valid_container.store.getFreeCapacity(RESOURCE_ENERGY));
                 let used_capacity = drone.store.getUsedCapacity(RESOURCE_ENERGY);
                 let store_free_space = valid_container.store.getFreeCapacity(RESOURCE_ENERGY);
                 switch(drone.transfer(valid_container, RESOURCE_ENERGY)){
@@ -101,7 +107,7 @@ var deposit = {
                         break;
                     case 0:
                         let difference = used_capacity - store_free_space;
-                        //console.log(difference, used_capacity, store_free_space);
+                        console.log(difference, used_capacity, store_free_space);
                         if(difference > 0){
                             Memory.creeps[drone.name].fitness_score += used_capacity - difference;
                         }
@@ -111,7 +117,29 @@ var deposit = {
                 }
             }
         }
-    }
+    }, 
+
+    findStorage: function(position){ 
+        const valid_structures = [STRUCTURE_SPAWN,STRUCTURE_EXTENSION];           
+        let found;
+        
+        found = position.findClosestByRange(FIND_MY_STRUCTURES, {
+            filter: function(structure) {
+                return (structure.structureType == STRUCTURE_STORAGE && structure.store.getFreeCapacity(RESOURCE_ENERGY) != 0);
+            }
+        });
+
+        if(!found){
+            found = position.findClosestByRange(FIND_MY_STRUCTURES, {
+                filter: function(structure) {
+                    return (valid_structures.includes(structure.structureType) && structure.store.getFreeCapacity(RESOURCE_ENERGY) != 0);
+                }
+            });
+        }
+
+        return found;
+    },
+
 };
 
 module.exports = deposit;

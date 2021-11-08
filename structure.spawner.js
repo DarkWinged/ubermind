@@ -2,54 +2,61 @@ var spawner = {
     init: function(spawner_name){
         let new_spawner = {
             name: spawner_name,
-            queue: []
+            queue: [],
+            priority_queue: []
         };
         return new_spawner;
     },
 
     operate: function(spawner_name){
         //console.log(`spawner ${spawner_name} is operating`);
-        let queue = Memory.spawns[spawner_name].queue;
         let spawner_inWorld = Game.spawns[spawner_name];
-        let render_position = new RoomPosition(
-            spawner_inWorld.pos.x,
-            spawner_inWorld.pos.y,
-            spawner_inWorld.pos.roomName
-        );
+        let result;
+        let render_position = {x:spawner_inWorld.pos.x,y:spawner_inWorld.pos.y,roomName:spawner_inWorld.pos.roomName};
 
-        Game.map.visual.text(`${queue.length}`, render_position, {color: '#FF0000', fontSize: 1}); 
+        spawner_inWorld.room.visual.text(`${Memory.spawns[spawner_name].queue.length},${Memory.spawns[spawner_name].priority_queue.length}`, render_position, {color: '#FF0000', fontSize: 1}); 
 
-        if(queue.length > 0 && spawner_inWorld.spawning == null){
-            let process_queue_result = this.processQueue(queue, spawner_name);
-            if(process_queue_result[0] == 0)    
-                Memory.spawns[spawner_name].queue = process_queue_result[1];
-            else{
-                render_position = new RoomPosition(
-                    spawner_inWorld.pos.x - 2,
-                    spawner_inWorld.pos.y - 2,
-                    spawner_inWorld.pos.roomName
-                );
-                Game.map.visual.rect(
-                    render_position,
-                    4*(spawner_inWorld.room.energyAvailable/process_queue_result[1]),
-                    1,
-                    {fill: 'transparent', fill: '#ffff00'}
-                );
-                render_position = new RoomPosition(
-                    spawner_inWorld.pos.x - 2,
-                    spawner_inWorld.pos.y - 2,
-                    spawner_inWorld.pos.roomName
-                );
-                Game.map.visual.rect(
-                    render_position, 
-                    4,
-                    1,
-                    {fill: 'transparent', stroke: '#0000ff'}
-                );
+        if(spawner_inWorld.spawning == null){
+            if(Memory.spawns[spawner_name].priority_queue.length > 0){
+                result = this.queue(Memory.spawns[spawner_name].priority_queue, spawner_name);
+                Memory.spawns[spawner_name].priority_queue = result[0];
+                return result[1];
             }
-            return process_queue_result[0];
+            else if(Memory.spawns[spawner_name].queue.length > 0){
+                result = this.queue(Memory.spawns[spawner_name].queue, spawner_name);
+                Memory.spawns[spawner_name].queue = result[0];
+                return result[1];
+            }
+            else
+                return 0;
         } else
             return 0;
+    },
+
+    queue: function(queue, spawner_name){
+        let process_queue_result = this.processQueue(queue, spawner_name);
+        let spawner_inWorld = Game.spawns[spawner_name];
+        let render_position = {x:spawner_inWorld.pos.x,y:spawner_inWorld.pos.y,roomName:spawner_inWorld.pos.roomName};
+        if(process_queue_result[0] == 0)    
+            queue = process_queue_result[1];
+        else{
+            render_position.x -= 2;
+            render_position.y -= 2;
+
+            spawner_inWorld.room.visual.rect(
+                render_position,
+                4*(spawner_inWorld.room.energyAvailable/process_queue_result[1]),
+                1,
+                {fill: 'transparent', fill: '#ffff00'}
+            );
+            spawner_inWorld.room.visual.rect(
+                render_position, 
+                4,
+                1,
+                {fill: 'transparent', stroke: '#0000ff'}
+            );
+        }
+        return [queue, process_queue_result[0]];
     },
 
     processQueue: function(queue, spawner_name){
@@ -81,40 +88,20 @@ var spawner = {
             species:drone_details.species,
             genome:drone_details.genome,
             job_path:path,
-            fitness_score:0
+            fitness_score:1
 
         };
         Memory.hives[spawner_inWorld.room.name].Drones.push(drone_id);
         Memory.creeps[drone_id] = new_drone;
         Memory.tasks[path['task']].drones.push(drone_id);
         Memory.tasks[path['task']].drones_queued -=1;
-        /*switch(drone_details.role){
-        case 'harvest':
-            //require('drone_harvester').init(drone_id, Spawn_ID); 
-            //require('job_route').init(drone_id, Spawn_ID);
-            break;
-        case 'transport':
-            //require('drone_transporter').init(drone_id, Spawn_ID);
-            break;
-        case 'build':
-            //require('drone_builder').init(drone_id, Spawn_ID);
-            break;
-        case 'scout':
-            //require('drone_scout').init(drone_id, Spawn_ID);
-            break;
-        case 'heal':
-            //require('drone_healer').init(drone_id, Spawn_ID);
-            break;
-        case 'claim':
-            //require('drone_claimer').init(drone_id, Spawn_ID);
-            break;
-        }*/
         return 0;
     },
 
     queueDrone: function(spawner_name, species, path) {
         console.log(`queuing new drone of ${species.name} at ${spawner_name}`);
         let cost = this.calculateCost(Game.spawns[spawner_name], species.genome);
+        const priority_roles = ['mine','deposit'];
         if(cost < 0)
             return cost;
 
@@ -124,8 +111,12 @@ var spawner = {
             genome: species.genome,
             path: path
         }
-        //console.log(drone_details.role,drone_details.species,drone_details.genome,drone_details.path);
-        Memory.spawns[spawner_name].queue.push(drone_details);
+        console.log(`drone details:`,drone_details.role,drone_details.species,drone_details.genome,drone_details.path);
+        if(priority_roles.includes(species.role))
+            Memory.spawns[spawner_name].priority_queue.push(drone_details);
+        else
+            Memory.spawns[spawner_name].queue.push(drone_details);
+
         return 1;
     },
 

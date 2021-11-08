@@ -1,6 +1,6 @@
 var mine = {
-    init: function(drones_desired, target_pos, job_id, room_id){
-        let task_id = `mine:${Game.time%1000}`;
+    init: function(drones_desired, room_id, job_id, target_pos){
+        let task_id = `mine:${Game.time%1000}x${Math.round(Math.random()*1000)}`;
         let new_mine_task = {
             task_id: task_id,
             job_id: job_id,
@@ -55,6 +55,15 @@ var mine = {
                     break;
                 case 0:
                     Memory.creeps[creep.name].fitness_score += parts * 2;
+                    break;
+            }
+        } else {
+            switch(creep.harvest(target)){
+                case ERR_NOT_IN_RANGE:
+                    creep.moveTo(target, {visualizePathStyle: {stroke: '#ffff33'}});
+                    break;
+                case 0:
+                    Memory.creeps[creep.name].fitness_score += creep.store.getFreeCapacity(RESOURCE_ENERGY);
                     break;
             }
         }

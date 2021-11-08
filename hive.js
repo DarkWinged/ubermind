@@ -24,53 +24,44 @@ var hive = {
     
     cleanupDrones: function (room_id) {
         let path;
-        let index;
-        let drone;
-        let drones;
         Memory.hives[room_id].Drones.forEach(drone_id => {
-            if(!Game.creeps[drone_id]){
-                //console.log(`initating cleanup for ${drone_id}`);
-                path = Memory.creeps[drone_id].job_path;
-                index = Memory.tasks[path.task].drones.indexOf(drone_id);
-                //console.log(index, ' of ', drone_id, ' in ', Memory.tasks[path.task]);
-                Memory.tasks[path.task].drones[index] = null;
-                
-                drones = Memory.tasks[path.task].drones.sort(function(a,b) {
-                    if(a == drone_id)
-                        return 1;
-                    if(b == drone_id)
-                        return -1;
-                });
-                drones.pop();
-                Memory.tasks[path.task].drones = drones;
-
-                drone = Memory.creeps[drone_id];
-                Memory.abathur.species[drone.species].fitness.score += drone.fitness_score;
-                Memory.abathur.species[drone.species].fitness.entries += 1;
-                delete(Memory.creeps[drone_id]);
-
-                drones = Memory.hives[room_id].Drones.sort(function(a,b) {
-                    if(a == drone_id)
-                        return 1;
-                    if(b == drone_id)
-                        return -1;
-                });
-                drones.pop();
-                Memory.hives[room_id].Drones = drones;
-
+            //console.log(`Checking if ${drone_id} exits ${Game.creeps[drone_id]}`)
+            if(Game.creeps[drone_id] == null || Game.creeps[drone_id] == undefined) {
+                if(Memory.creeps[drone_id])
+                    path = Memory.creeps[drone_id].job_path;
+                else{
+                    let task = _.filter(Memory.tasks, task => task.drones.includes(drone_id));
+                    if(task.length > 0)
+                        Memory.tasks[task[0].task_id].drones = this.removeDroneInArray(drone_id, task[0].drones);
+                    Memory.hives[room_id].Drones = this.removeDroneInArray(drone_id, Memory.hives[room_id].Drones);
+                }
+                if(path){
+                    this.inturDrone(Memory.creeps[drone_id], drone_id, path, room_id);
+                }
             }
         });
-        /*for(let drone_id in Memory.hives[room_id].Drones) {
-            if(!Game.creeps[drone_id]){
-                console.log(`initating cleanup for ${drone_id}`);
-                let path = Memory.creeps[drone_id].job_path;
-                let index = Memory.tasks[path.task].drones.indexOf(drone_id);
-                console.log(index, ' of ', drone_id, ' in ', Memory.tasks[path.task]);
-                Memory.tasks[path.task].drones[index] = null;
-                delete(Memory.creeps[drone_id]);
-                delete(Memory.hives[room_id].Drones[drone_id]);
-            }   
-        };*/
+    },
+    
+    inturDrone: function(drone, drone_id, path, room_id){
+        if(Memory.abathur.species[drone.species]){
+            Memory.abathur.species[drone.species].fitness.score += drone.fitness_score;
+            Memory.abathur.species[drone.species].fitness.entries += 1;
+        }
+        
+        Memory.tasks[path.task].drones = this.removeDroneInArray(drone_id, Memory.tasks[path.task].drones);
+        Memory.hives[room_id].Drones = this.removeDroneInArray(drone_id, Memory.hives[room_id].Drones);
+        delete(Memory.creeps[drone_id]);
+    },
+
+    removeDroneInArray: function(drone_id, array) {
+        let drones = array.sort(function(a,b) {
+            if(a == drone_id)
+                return 1;
+            if(b == drone_id)
+                return -1;
+        });
+        console.log(array.toString(),drones.pop());
+        return drones;
     },
 
     tick: function(room_id) {
@@ -103,11 +94,7 @@ var hive = {
 
     jobSwitcher: function (job) {
         //console.log(`switching job ${job.job_id}`);
-        switch(job.job_type){
-            case 'harvest':
-                job = require('job.harvest').operate(job);    
-            break;
-        };
+        job = require(`job.${job.job_type}`).operate(job);
         return job;
     }
 

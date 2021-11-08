@@ -36,7 +36,7 @@ let abathur = {
         let new_species;
         let generation = species.generation;
 
-        console.log(`Mutating species ${species_name}(${this.genomeToString(species.genome)})`);
+        //console.log(`Mutating species ${species_name}(${this.genomeToString(species.genome)})`);
 
         switch(scale){
             case -1:
@@ -72,7 +72,7 @@ let abathur = {
         let new_genome = {};
 
         for(let key in genome){
-            console.log(key);
+            //console.log(key);
             new_genome[key] = genome[key];
         }
 
@@ -84,9 +84,9 @@ let abathur = {
             selection += 1;
             gene = Object.keys(genome)[selection];
         }*/
-        console.log(this.genomeToString(new_genome), new_genome[gene],gene,selection,Object.keys(new_genome).length);
+        //console.log(this.genomeToString(new_genome), new_genome[gene],gene,selection,Object.keys(new_genome).length);
         new_genome[gene] += scale;
-        console.log(new_genome[gene]);
+        //console.log(new_genome[gene]);
 
         Object.keys(new_genome).forEach(gene =>{ 
             if(new_genome[gene] < 1)
@@ -111,7 +111,7 @@ let abathur = {
         let spawner_name;
         let result;
 
-        console.log(`task ${path.task} is requesing ${usable_species}`);
+        //console.log(`task ${path.task} is requesing ${usable_species}`);
 
         if(usable_species){
             spawner_name = Memory.hives[path.hive].Spawners;
@@ -148,9 +148,9 @@ let abathur = {
             Memory.abathur.species[usable_species[0].name] = usable_species[0];
         }
 
-        console.log(`species that are usable are: `);
+        //console.log(`species that are usable are: `);
         usable_species.forEach(species => {
-            console.log(`\t${species.name}`);
+            //console.log(`\t${species.name}`);
         })
 
         return this.chooseSpecies(usable_species);
@@ -168,7 +168,7 @@ let abathur = {
             if(species.fitness.entries == 0)
                 pool_total += 5;
             else
-                pool_total += (species.fitness.score/species.fitness.entries)/this.genomeCost(species.genome);
+                pool_total += Math.round(species.fitness.score/species.fitness.entries)/this.genomeCost(species.genome);
         });
 
         possible_species.forEach(species => {
@@ -178,34 +178,35 @@ let abathur = {
                 }
             }
             else{
-                let fitness_average = (species.fitness.score/species.fitness.entries)/this.genomeCost(species.genome);
+                let fitness_average = Math.round(species.fitness.score/species.fitness.entries)/this.genomeCost(species.genome);
                 for(iteration=0 ; iteration < (fitness_average/pool_total)*pool_size ; iteration++){
                     pool.push(species);
                 }
             }
         })
 
-        console.log(`species in the pool are are: `);
+        //console.log(`species in the pool are are: `);
         pool.forEach(species => {
-            console.log(`\t${species.name}`);
+            //console.log(`\t${species.name}`);
         })
 
-        choice = Game.time%(pool.length*1.5);
+        choice = Math.round(Game.time%(pool.length*1.5));
 
-        console.log(choice,pool.length);
+        //console.log(choice,pool.length);
         if(choice >= pool.length){
             choice = Game.time%pool.length;
-            console.log(choice,pool.length);
+            //console.log(choice,pool.length);
             chozen = pool[choice];
-            console.log(chozen.name)
+            //console.log(chozen.name)
             chozen = this.speciesMutate(chozen.name, 0);
-
-            console.log(`species ${chozen.name} has been mutated ${this.genomeToString(chozen.genome)}`);
+            Memory.abathur.species[chozen.name] = chozen;
+            //console.log(`species ${chozen.name} has been mutated ${this.genomeToString(chozen.genome)}`);
         }
-        else;
+        else{
             chozen = pool[choice];
+        }
 
-        console.log(`the chozen species is ${chozen.name, this.genomeToString(chozen.genome)}`);
+        //console.log(`the chozen species is ${chozen.name} as ${this.genomeToString(chozen.genome)}`);
 
         return chozen;
     },
