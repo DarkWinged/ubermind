@@ -1,11 +1,12 @@
-const mine = require('task.mine');
-const deposit = require('task.deposit');
+const Mine = require('task.mine');
+const Deposit = require('task.deposit');
+const Task = require('task');
 
-var harvest = {
+const harvest = {
     init: function(room_id, target_pos){
         let job_id = `harvest:${Game.time%1000}x${Math.round(Math.random()*1000)}`;
-        let mine_task = mine.init(1, room_id, job_id, target_pos);
-        let deposit_task = deposit.init(2, room_id, job_id);
+        let mine_task = Mine.init(1, room_id, job_id, target_pos);
+        let deposit_task = Deposit.init(2, room_id, job_id);
         let new_job ={
             job_id:job_id,
             room_id:room_id,
@@ -20,13 +21,19 @@ var harvest = {
 
     operate: function(job){
         //console.log(`job ${job.job_id} is operational`);
-        let task1 = Memory.tasks[job.job_tasks[0]];
-        let task2 = Memory.tasks[job.job_tasks[1]];
-        if(task1.drones.length > 0 && task2.drones.length < 1 && Game.creeps[task1.drones[0]].store.getFreeCapacity() <= 0){
-            deposit.outsourceWork(task1.drones[0], task1.drones[0], task2.origin_room);
+        let mining_task = Memory.tasks[job.job_tasks[0]];
+        let mining_drone = mining_task.drones[0];
+        let depositing_task = Memory.tasks[job.job_tasks[1]];
+        
+        if(
+            mining_task.drones.length > 0 &&
+            depositing_task.drones.length < 1 &&
+            Game.creeps[mining_drone].store.getFreeCapacity() <= 0
+        ) {
+            Task.outsourceWork(mining_drone, depositing_task, mining_drone);
         } else{
-            mine.preform(task1, job.room_id);
-            deposit.preform(task2, task1.drones[0], job.room_id);
+            Task.preform(mining_task, mining_task.origin_room, mining_task.target_pos);
+            Task.preform(depositing_task, depositing_task.origin_room, mining_drone);
         }
         return job;
     }

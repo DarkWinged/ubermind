@@ -1,10 +1,12 @@
-const spawner = require("structure.spawner");
+const Spawner = require("structure.spawner");
+const Tower = require('structure.tower');
 
-var hive = {
+const hive = {
     init: function(room_id){
         let new_hive = {
             name: room_id,
             Spawners: [],
+            Towers: [],
             Drones: [],
             Jobs: []
         };
@@ -14,9 +16,7 @@ var hive = {
         });
         
         room_spawners.forEach(spawn_local => {
-            let new_spawner = spawner.init(spawn_local.name);
-            Memory.spawns[new_spawner.name] = new_spawner;
-            new_hive.Spawners.push(new_spawner.name);
+            new_hive = this.createSpawner(new_hive, spawn_local);
         });
 
         return new_hive;
@@ -60,7 +60,7 @@ var hive = {
             if(b == drone_id)
                 return -1;
         });
-        console.log(array.toString(),drones.pop());
+        array.toString(),drones.pop();
         return drones;
     },
 
@@ -69,12 +69,34 @@ var hive = {
         this.operateSpawners(room_id);
         this.operateJobs(room_id);
         this.cleanupDrones(room_id);
+        this.operateTowers(room_id);
+    },
+
+    createSpawner: function(new_hive, spawn_local) {
+        let new_spawner = spawner.init(spawn_local.name);
+        Memory.spawns[new_spawner.name] = new_spawner;
+        new_hive.Spawners.push(new_spawner.name);
+        return new_hive;
     },
 
     operateSpawners: function (room_id) {
         Memory.hives[room_id].Spawners.forEach(local_spawn => {
             //console.log(`Hive ${room_id} is activating ${local_spawn}`);
-            spawner.operate(local_spawn);
+            Spawner.operate(local_spawn);
+        });
+    },
+    
+    createTower: function (room_id, tower_id) {
+        let new_tower = Tower.init(tower_id);
+        Memory.hives[room_id].Towers.push(new_tower.name);
+        Memory.towers[new_tower.name] = new_tower;
+        return new_tower;
+    },
+
+    operateTowers: function (room_id) {
+        Memory.hives[room_id].Towers.forEach(local_tower => {
+            //console.log(`Hive ${room_id} is activating ${local_spawn}`);
+            Tower.operate(local_tower);
         });
     },
 
@@ -88,15 +110,9 @@ var hive = {
     operateJobs:function(room_id){
         Memory.hives[room_id].Jobs.forEach(job => {
             //console.log(job,Memory.jobs[job].job_id);
-            Memory.jobs[job] = this.jobSwitcher(Memory.jobs[job]);
+            Memory.jobs[job] = require(`job.${Memory.jobs[job].job_type}`).operate(Memory.jobs[job]);
         });
     },
-
-    jobSwitcher: function (job) {
-        //console.log(`switching job ${job.job_id}`);
-        job = require(`job.${job.job_type}`).operate(job);
-        return job;
-    }
 
 };
 
