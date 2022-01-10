@@ -1,5 +1,5 @@
-const Hive = require('hive');
-const Abathur = require('abathur');
+let Hive = require('hive');
+let Abathur = require('abathur');
 
 const main = {
     init: function(){
@@ -12,7 +12,7 @@ const main = {
     assignAbathur:function(){
         Memory.abathur = Abathur.init();
         let new_species = Abathur.speciesCreate(`${'mine'}er:${Game.time%1000}:${0}`, 'mine', 0, [WORK,MOVE,CARRY], {WORK:2,MOVE:1,CARRY:1});
-        Memory.abathur.species[new_species.name] = new_species;
+        Memory.abathur.species[new_species.role][new_species.name] = new_species;
     },
     
     assignHives: function(){
@@ -55,6 +55,10 @@ module.exports.loop = function () {
         };
     }
     
+    if(Game.time %10000 == 0){
+        Memory.abathur.species = Abathur.extinctionEvent();
+    }
+
     if(Game.cpu.bucket >= 5000)
         Game.cpu.generatePixel();
 }

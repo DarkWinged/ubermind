@@ -1,5 +1,5 @@
-const Spawner = require("structure.spawner");
-const Tower = require('structure.tower');
+let Spawner = require("structure.spawner");
+let Tower = require('structure.tower');
 
 const hive = {
     init: function(room_id){
@@ -42,13 +42,36 @@ const hive = {
         });
     },
     
+    getGenerationFromString: function(speciesName){
+        let map = {"48": 0, "49": 1, "50": 2, "51": 3, "52": 4, "53": 5, "54": 6, '55': 7, "56": 8, "57": 9, "58": ":"};
+        let index = speciesName.length - 1;
+        let result = 0; 
+        let testing;
+        //while(index >= 0){
+            testing = map[speciesName.charCodeAt(index)]
+            if(testing != ":")
+                result = (result * 10) + speciesName.charCodeAt(index);
+            else
+                return result;
+        //}; 
+        return result;
+    },
+
     inturDrone: function(drone, drone_id, path, room_id){
-        if(Memory.abathur.species[drone.species]){
-            Memory.abathur.species[drone.species].fitness.score += drone.fitness_score;
-            Memory.abathur.species[drone.species].fitness.entries += 1;
+        if(Memory.abathur.species[drone.role][drone.species]){
+            Memory.abathur.species[drone.role][drone.species].fitness.score += drone.fitness_score;
+            Memory.abathur.species[drone.role][drone.species].fitness.entries += 1;
+        }
+        else{
+            let new_name = Memory.creeps[drone.name].species;
+            let new_species = require('abathur').speciesCreate(new_name, Memory.creeps[drone.name].role, this.getGenerationFromString(new_name), [], Memory.creeps[drone.name].genome);
+            Memory.abathur.species[drone.role][new_name] = new_species;
+            Memory.abathur.species[drone.role][new_name].fitness.score += drone.fitness_score;
+            Memory.abathur.species[drone.role][new_name].fitness.entries += 1;
         }
         
-        Memory.tasks[path.task].drones = this.removeDroneInArray(drone_id, Memory.tasks[path.task].drones);
+        if(Memory.tasks[path.task])
+            Memory.tasks[path.task].drones = this.removeDroneInArray(drone_id, Memory.tasks[path.task].drones);
         Memory.hives[room_id].Drones = this.removeDroneInArray(drone_id, Memory.hives[room_id].Drones);
         delete(Memory.creeps[drone_id]);
     },
@@ -66,14 +89,14 @@ const hive = {
 
     tick: function(room_id) {
         //console.log(`Hive ${room_id} is operating`);
-        this.operateSpawners(room_id);
-        this.operateJobs(room_id);
         this.cleanupDrones(room_id);
+        this.operateJobs(room_id);
+        this.operateSpawners(room_id);
         this.operateTowers(room_id);
     },
 
     createSpawner: function(new_hive, spawn_local) {
-        let new_spawner = spawner.init(spawn_local.name);
+        let new_spawner = Spawner.init(spawn_local.name);
         Memory.spawns[new_spawner.name] = new_spawner;
         new_hive.Spawners.push(new_spawner.name);
         return new_hive;
@@ -101,6 +124,7 @@ const hive = {
     },
 
     createJob: function (room_id, job_type, target) {
+        console.log(room_id, job_type, target)
         let new_job = require(`job.${job_type}`).init(room_id, target);
         Memory.hives[room_id].Jobs.push(new_job.job_id);
         Memory.jobs[new_job.job_id] = new_job;

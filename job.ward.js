@@ -1,13 +1,13 @@
-const Build = require("task.build");
-const Upgrade = require("task.upgrade");
-const Maintain = require("task.maintain");
-const Task = require('task');
+let Task_Build = require("task.build");
+let Task_Upgrade = require("task.upgrade");
+let Task_Maintain = require("task.maintain");
+let Task = require('task');
 const ward = {
     init: function(room_id, target_room){
         let job_id = `ward:${Game.time%1000}x${Math.round(Math.random()*1000)}`;
-        let build_task = Build.init(1, room_id, job_id, target_room);
-        let upgrade_task = Upgrade.init(1, room_id, job_id);
-        let maintain_task = Maintain.init(1, room_id, job_id, target_room);
+        let build_task = Task_Build.init(1, room_id, job_id, target_room);
+        let upgrade_task = Task_Upgrade.init(1, room_id, job_id);
+        let maintain_task = Task_Maintain.init(1, room_id, job_id, target_room);
         let new_job = {
             job_id:job_id,
             room_id:room_id,

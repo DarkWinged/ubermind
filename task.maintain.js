@@ -1,4 +1,4 @@
-const Task = require('task');
+let Task = require('task');
 const maintain = {
     init: function(drones_desired, room_id, job_id, target_room){
         let task_id = `maintain:${Game.time%1000}`;
@@ -50,18 +50,40 @@ const maintain = {
         if (drone.pos.roomName != room_id) {
             drone.moveTo({x:20,y:20,roomName:room_id});
         } else {
-            let parts = drone.getActiveBodyparts(WORK);
-            let invalid_structures = [STRUCTURE_WALL,STRUCTURE_RAMPART];    
-            let targets = [];
+            this.maintain(drone);
+        }
+    },
+    
+    maintain: function(drone){
+        let targets = Memory.creeps[drone.name].targets_maintain_list;
+        let invalid_structures = [STRUCTURE_WALL, STRUCTURE_RAMPART];
+
+        if(!targets || targets.length == 0){    
             targets = drone.room.find(FIND_STRUCTURES, {
                 filter: function(structure) {
                     return (!invalid_structures.includes(structure.structureType) && structure.hits < structure.hitsMax);
                 }
             });
-            let target;
-            if(targets.length > 0){
-                targets = targets.sort((a, b) => ((a.hits/a.hitsMax) > (b.hits/b.hitsMax))? 1 : -1);
-                target = targets[0];
+            targets = targets.map((t) => t.id);
+        }
+
+        if(targets.length > 0){
+            let target = Game.getObjectById(Memory.creeps[drone.name].target_maintain);
+
+            if(!target || target.hits == target.hitsMax){
+                targets = targets.filter(t => Game.getObjectById(t).hits != Game.getObjectById(t).hitsMax);
+                targets = targets.sort(
+                    (a, b) =>
+                    ((Game.getObjectById(a).hits / Game.getObjectById(a).hitsMax) >
+                    (Game.getObjectById(b).hits / Game.getObjectById(b).hitsMax)) ?
+                    1 : -1
+                );
+                target = Game.getObjectById(targets[0]);
+            }
+
+            if(target){
+                Memory.creeps[drone.name].target_maintain = target.id
+                let fitness = drone.getActiveBodyparts(WORK) * 1;
                 switch(drone.repair(target)) {
                     case ERR_NOT_IN_RANGE:
                         drone.moveTo(target, {visualizePathStyle: {stroke: '#afff33'}});
@@ -72,14 +94,15 @@ const maintain = {
                         });
                         
                         if(drone.repair(target) == 0)
-                            Memory.creeps[drone.name].fitness_score += parts * 2;
+                            Memory.creeps[drone.name].fitness_score += fitness * Memory.abathur.fitness_scaler;
                         break;
                     case 0:
                         drone.moveTo(target, {visualizePathStyle: {stroke: '#afff33'}});
-                        Memory.creeps[drone.name].fitness_score += parts * 2;
+                        Memory.creeps[drone.name].fitness_score += fitness * Memory.abathur.fitness_scaler;
                         break;
                 }
             }
+            Memory.creeps[drone.name].targets_maintain_list = targets;
         }
     }
 };

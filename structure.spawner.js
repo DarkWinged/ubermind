@@ -75,7 +75,7 @@ var spawner = {
 
     buildDrone: function(spawner_name, drone_details){
         let spawner_inWorld = Game.spawns[spawner_name];
-        let dna = require('abathur').composeDna(drone_details.genome);
+        let dna = require('abathur').genomeCompose(drone_details.genome);
         let drone_id = `${drone_details.species}:${Game.time}x${Math.round(Math.random()*1000)}X`;
         let path = drone_details.path;
         
@@ -101,7 +101,7 @@ var spawner = {
     queueDrone: function(spawner_name, species, path) {
         console.log(`queuing new drone of ${species.name} at ${spawner_name}`);
         let cost = this.calculateCost(Game.spawns[spawner_name], species.genome);
-        const priority_roles = ['mine','deposit'];
+        const priority_roles = ['mine','deposit','refill','sweep'];
         if(cost < 0)
             return cost;
 

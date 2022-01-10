@@ -9,8 +9,8 @@ const task = {
             if(drone){
                 creep = Game.creeps[drone];
                 if(creep){
-                    //console.log(`drone ${creep.name} is working on ${task.task_id}`)
-                    require(`task.${task.task_type}`).work(creep, room_id, target);
+                    //console.log(`drone ${creep.name} is working on ${task.task_id} which is a ${task.task_type}`)
+                    require(`task.${task.task_type}`).work(creep, room_id, target, task.task_id);
                 }
             }
         });
@@ -24,7 +24,7 @@ const task = {
         if(drone){
             let creep = Game.creeps[drone];
             if(creep){
-                //console.log(`drone ${creep.name} is working on ${task.task_id}`)
+                //console.log(`drone ${creep.name} is working on ${task.task_id} which is a ${task.task_type}`)
                 require(`task.${task.task_type}`).work(creep, task.origin_room, target);
             }
         }
@@ -40,21 +40,42 @@ const task = {
         return queued;
     },
 
+    
+    pythagDistance: function(posA, posB){
+        let X = Math.abs(posA.x - posB.x);
+        let Y = Math.abs(posA.y - posB.y);
+        return Math.sqrt(X*X + Y*Y);
+    },
+
     findStorage: function(position){ 
         ///console.log(`looking for storage near ${position}`);
         const valid_structures = [STRUCTURE_SPAWN,STRUCTURE_EXTENSION];           
         let found;
         
-        found = position.findClosestByRange(FIND_MY_STRUCTURES, {
-            filter: function(structure) {
-                return (structure.structureType == STRUCTURE_STORAGE && structure.store.getUsedCapacity(RESOURCE_ENERGY) != 0);
-            }
-        });
+        found = this.findStructures(position,[STRUCTURE_STORAGE])[0];
         
         if(!found){
-            found = position.findClosestByRange(FIND_MY_STRUCTURES, {
+            found = this.findStructures(position, valid_structures, true);
+            found = found.sort((a,b) => (this.pythagDistance(a.pos, position) < this.pythagDistance(b.pos, position))? -1: 1)[0];
+        }
+
+        return found;
+    },
+
+    findStructures: function(position, looking_for_structures, full){
+        const valid_structures = looking_for_structures || [STRUCTURE_SPAWN, STRUCTURE_EXTENSION];           
+        let found;
+        if(full){
+            found = Game.rooms[position.roomName].find(FIND_MY_STRUCTURES, {
                 filter: function(structure) {
                     return (valid_structures.includes(structure.structureType) && structure.store.getUsedCapacity(RESOURCE_ENERGY) != 0);
+                }
+            });
+        }
+        else {
+            found = Game.rooms[position.roomName].find(FIND_MY_STRUCTURES, {
+                filter: function(structure) {
+                    return (valid_structures.includes(structure.structureType) && structure.store.getFreeCapacity(RESOURCE_ENERGY) != 0);
                 }
             });
         }
@@ -66,23 +87,16 @@ const task = {
         const valid_structures = [STRUCTURE_SPAWN,STRUCTURE_EXTENSION,STRUCTURE_TOWER];           
         let found;
         
-        found = position.findClosestByRange(FIND_MY_STRUCTURES, {
-            filter: function(structure) {
-                return (structure.structureType == STRUCTURE_STORAGE && structure.store.getFreeCapacity(RESOURCE_ENERGY) != 0);
-            }
-        });
-
+        found = this.findStructures(position,[STRUCTURE_STORAGE])[0];
+        
         if(!found){
-            found = position.findClosestByRange(FIND_MY_STRUCTURES, {
-                filter: function(structure) {
-                    return (valid_structures.includes(structure.structureType) && structure.store.getFreeCapacity(RESOURCE_ENERGY) != 0);
-                }
-            });
+            found = this.findStructures(position, valid_structures, false);
+            found = found.sort((a,b) => (this.pythagDistance(a.pos, position) < this.pythagDistance(b.pos, position))? -1: 1)[0];
         }
-
+        
         return found;
     },
-
+    
 };
 
 module.exports = task;

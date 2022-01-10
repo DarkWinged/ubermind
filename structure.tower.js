@@ -10,9 +10,10 @@ var tower = {
 
     operate: function(tower_id){
         let tower = Game.getObjectById(Memory.towers[tower_id].structure_id);
+        let result;
         if(tower){
-            this.targetHostiles(tower);
-            if(tower.store.getUsedCapacity(RESOURCE_ENERGY) > 750)
+            result = this.targetHostiles(tower);
+            if(tower.store.getUsedCapacity(RESOURCE_ENERGY) > 750 && !result)
                 this.repairWalls(tower);
         }
     },
@@ -21,7 +22,9 @@ var tower = {
         var closestHostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
         if(closestHostile != null && closestHostile != undefined) {
             tower.attack(closestHostile);
+            return true;
         } 
+        return false;
     },
 
     repairWalls: function(tower){

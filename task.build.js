@@ -1,4 +1,4 @@
-const Task = require('task');
+let Task = require('task');
 const build = {
     init: function(drones_desired, room_id, job_id, target_room){
         let task_id = `build:${Game.time%1000}x${Math.round(Math.random()*1000)}`;
@@ -32,11 +32,11 @@ const build = {
 
     pickupResources: function(drone, room_id){
         if (drone.pos.roomName != room_id) {
-            drone.moveTo({x:20,y:20,roomName:room_id});
+            drone.moveTo({x:25,y:25,roomName:room_id});
         }
         else {
             let target = Task.findStorage(drone.pos);
-            
+            //console.log(`builder(${drone.name}) is resuplying from ${target}`);
             switch(drone.withdraw(target, RESOURCE_ENERGY)) {
                 case ERR_NOT_IN_RANGE: 
                     drone.moveTo(target);
@@ -49,22 +49,42 @@ const build = {
         if (drone.pos.roomName != room_id) {
             drone.moveTo({x:20,y:20,roomName:room_id});
         } else {
-            let parts = drone.getActiveBodyparts(WORK);
-            let targets = drone.room.find(FIND_CONSTRUCTION_SITES);
-            let target;
+            let targets = Memory.creeps[drone.name].targets_build_list;
+
+            if(!targets || targets.length == 0){
+                targets = drone.room.find(FIND_CONSTRUCTION_SITES);
+                targets = targets.map((t) => t.id);
+            }
             //console.log(`number of constructon sites: ${targets.length}`);
             if(targets.length > 0){
-                //console.log(`construction sites ${targets.toString()}`);
-                target = drone.pos.findClosestByRange(targets);
-                switch(drone.build(target)) {
-                    case ERR_NOT_IN_RANGE:
-                        drone.moveTo(target, {visualizePathStyle: {stroke: '#33f6ff'}});
-                        break;
-                    case 0:
-                        Memory.creeps[drone.name].fitness_score += parts * 2;
-                        break;
+                let target = Game.getObjectById(Memory.creeps[drone.name].targets_build);
+                if(!target){
+                    targets = targets.filter(t => Game.getObjectById(t) != null);
+                    let search_targets = targets.map((t) => Game.getObjectById(t));
+                    target = drone.pos.findClosestByRange(search_targets);
                 }
+                if(target){
+                    //console.log(`construction sites ${targets.toString()}`);
+                    Memory.creeps[drone.name].targets_build = target.id;
+                    this.build(drone, target)
+                }
+
+                Memory.creeps[drone.name].targets_build_list = targets;
             }
+        }
+    },
+
+    build: function(drone, target){
+        let parts = drone.getActiveBodyparts(WORK);
+        switch(drone.build(target)) {
+            case ERR_NOT_IN_RANGE:
+                drone.moveTo(target, {visualizePathStyle: {stroke: '#33f6ff'}});
+                return true;
+            case ERR_INVALID_TARGET:
+                return false
+            case 0:
+                Memory.creeps[drone.name].fitness_score += (parts * 5)*Memory.abathur.fitness_scaler;
+                return true;
         }
     }
 };

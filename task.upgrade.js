@@ -1,4 +1,4 @@
-const Task = require('task');
+let Task = require('task');
 const upgrade = {
     init: function(drones_desired, room_id, job_id, target_room){
         let task_id = `upgrade:${Game.time%1000}x${Math.round(Math.random()*1000)}`;
@@ -37,12 +37,17 @@ const upgrade = {
             drone.moveTo({x:20,y:20,roomName:room_id});
         }
         else {
-            let target = Task.findStorage(drone.pos);
-            
-            switch(drone.withdraw(target, RESOURCE_ENERGY)) {
-                case ERR_NOT_IN_RANGE: 
+            let target = Game.getObjectById(Memory.creeps[drone.name].target_ugrade);
+            if(!target || target.store.getUsedCapacity(RESOURCE_ENERGY) == 0){
+                target = Task.findStorage(drone.pos);
+            }
+            if(target){
+                Memory.creeps[drone.name].target_ugrade = target.id;
+                switch(drone.withdraw(target, RESOURCE_ENERGY)) {
+                    case ERR_NOT_IN_RANGE: 
                     drone.moveTo(target);
                     break;
+                }
             }
         }
     },
@@ -55,7 +60,7 @@ const upgrade = {
                 drone.moveTo(target, {visualizePathStyle: {stroke: '#33f6ff'}});
                 break;
             case 0:
-                Memory.creeps[drone.name].fitness_score += parts * 2;
+                Memory.creeps[drone.name].fitness_score += (parts * 2)*Memory.abathur.fitness_scaler;
                 break;
         }
     }

@@ -1,12 +1,12 @@
-const Mine = require('task.mine');
-const Deposit = require('task.deposit');
-const Task = require('task');
+let Task_Mine = require('task.mine');
+let Task_Deposit = require('task.deposit');
+let Task = require('task');
 
 const harvest = {
     init: function(room_id, target_pos){
         let job_id = `harvest:${Game.time%1000}x${Math.round(Math.random()*1000)}`;
-        let mine_task = Mine.init(1, room_id, job_id, target_pos);
-        let deposit_task = Deposit.init(2, room_id, job_id);
+        let mine_task = Task_Mine.init(1, room_id, job_id, target_pos);
+        let deposit_task = Task_Deposit.init(2, room_id, job_id);
         let new_job ={
             job_id:job_id,
             room_id:room_id,
@@ -26,9 +26,9 @@ const harvest = {
         let depositing_task = Memory.tasks[job.job_tasks[1]];
         
         if(
-            mining_task.drones.length > 0 &&
-            depositing_task.drones.length < 1 &&
-            Game.creeps[mining_drone].store.getFreeCapacity() <= 0
+            (mining_task.drones.length > 0 &&
+            depositing_task.drones.length < 1) &&
+            Memory.creeps[mining_drone].loaded
         ) {
             Task.outsourceWork(mining_drone, depositing_task, mining_drone);
         } else{
